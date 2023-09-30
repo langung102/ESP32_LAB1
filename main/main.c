@@ -14,9 +14,11 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 
-#define GPIO_BUTTON_PIN         4
-#define GPIO_LED_PIN            2
+#define GPIO_BUTTON_PIN         GPIO_NUM_4
+#define GPIO_LED_PIN            GPIO_NUM_2
 #define ESP_INTR_FLAG_DEFAULT   0
+
+#define DEBOUNCE_DELAY_MS       50
 
 static QueueHandle_t gpio_evt_queue = NULL;
 
@@ -36,10 +38,21 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
 static void print_eps32(void* arg)
 {
     uint32_t io_num;
+    uint32_t current_state;
+    uint32_t last_state = 0;
     while(1) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            gpio_set_level(BLINK_GPIO, gpio_get_level(io_num));
-            printf("ESP32\n");
+            current_state = gpio_get_level(io_num);
+            if (current_state != last_state) {
+                vTaskDelay(pdMS_TO_TICKS(DEBOUNCE_DELAY_MS));
+                current_state = gpio_get_level(io_num);
+
+                if (current_state != last_state) {
+                    gpio_set_level(GPIO_LED_PIN, gpio_get_level(io_num));
+                    printf("ESP32\n");
+                    last_state = current_state;
+                }
+            }
         }
     }
 }
