@@ -29,13 +29,13 @@ void print_id(void* arg) {
     } 
 }
 
-static void IRAM_ATTR gpio_isr_handler(void* arg)
+void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
-static void print_eps32(void* arg)
+void print_eps32(void* arg)
 {
     uint32_t io_num;
     uint32_t current_state;
